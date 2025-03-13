@@ -5,10 +5,67 @@ const emailQueue = new Queue('email-queue');
 
 exports.createCampaign = async (req, res) => {
   try {
+    // Parse recipients from the request body
+    let recipients;
+    try {
+      recipients = JSON.parse(req.body.recipients);
+    } catch (error) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid recipients format'
+      });
+    }
+
+    // Validate recipients
+    if (!Array.isArray(recipients) || recipients.length === 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'At least one recipient is required'
+      });
+    }
+
+    // Validate each recipient
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidRecipients = recipients.filter(r => !r.email || !emailRegex.test(r.email));
+    if (invalidRecipients.length > 0) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid email address found in recipients'
+      });
+    }
+
+    // Create campaign with validated recipients
     const campaign = await Campaign.create({
-      ...req.body,
-      sender: req.user._id
+      name: req.body.name,
+      subject: req.body.subject,
+      body: req.body.body,
+      sender: req.user._id,
+      status: req.body.scheduledFor ? 'scheduled' : 'draft',
+      scheduledFor: req.body.scheduledFor || null,
+      recipients: recipients.map(r => ({
+        email: r.email,
+        firstName: r.firstName || '',
+        lastName: r.lastName || '',
+        customFields: r.customFields || {}
+      })),
+      analytics: {
+        totalRecipients: recipients.length,
+        sent: 0,
+        opened: 0,
+        clicked: 0,
+        failed: 0
+      }
     });
+
+    // Handle file attachments if present
+    if (req.files && req.files.length > 0) {
+      campaign.attachments = req.files.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        contentType: file.mimetype
+      }));
+      await campaign.save();
+    }
 
     res.status(201).json({
       status: 'success',
@@ -66,6 +123,43 @@ exports.getCampaign = async (req, res) => {
 
 exports.updateCampaign = async (req, res) => {
   try {
+    // Handle recipients update if present
+    if (req.body.recipients) {
+      try {
+        const recipients = JSON.parse(req.body.recipients);
+        if (!Array.isArray(recipients) || recipients.length === 0) {
+          return res.status(400).json({
+            status: 'fail',
+            message: 'At least one recipient is required'
+          });
+        }
+
+        // Validate recipient emails
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const invalidRecipients = recipients.filter(r => !r.email || !emailRegex.test(r.email));
+        if (invalidRecipients.length > 0) {
+          return res.status(400).json({
+            status: 'fail',
+            message: 'Invalid email address found in recipients'
+          });
+        }
+
+        req.body.recipients = recipients;
+        req.body.analytics = {
+          totalRecipients: recipients.length,
+          sent: 0,
+          opened: 0,
+          clicked: 0,
+          failed: 0
+        };
+      } catch (error) {
+        return res.status(400).json({
+          status: 'fail',
+          message: 'Invalid recipients format'
+        });
+      }
+    }
+
     const campaign = await Campaign.findOneAndUpdate(
       { _id: req.params.id, sender: req.user._id },
       req.body,

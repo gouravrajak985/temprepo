@@ -28,10 +28,33 @@ const campaignSchema = new mongoose.Schema({
     type: Date
   },
   recipients: [{
-    email: String,
-    firstName: String,
-    lastName: String,
-    customFields: Map
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+      validate: {
+        validator: function(v) {
+          return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+        },
+        message: props => `${props.value} is not a valid email address!`
+      }
+    },
+    firstName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    lastName: {
+      type: String,
+      trim: true,
+      default: ''
+    },
+    customFields: {
+      type: Map,
+      of: String,
+      default: new Map()
+    }
   }],
   attachments: [{
     filename: String,
@@ -53,6 +76,12 @@ const campaignSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+// Update timestamps on save
+campaignSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 module.exports = mongoose.model('Campaign', campaignSchema);
