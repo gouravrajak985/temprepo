@@ -18,5 +18,7 @@ router
   .delete(campaignController.deleteCampaign);
 
 router.post('/:id/send', campaignController.sendCampaign);
+router.post('/send-single', campaignController.sendSingleEmail);
+router.get('/single-emails', campaignController.getSingleEmails);
 
 module.exports = router;

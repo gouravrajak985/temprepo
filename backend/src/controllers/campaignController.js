@@ -1,6 +1,8 @@
 const Campaign = require('../models/Campaign');
 const EmailTracker = require('../models/EmailTracker');
+const SingleEmail = require('../models/SingleEmail');
 const Queue = require('bull');
+const nodemailer = require('nodemailer');
 const emailQueue = new Queue('email-queue');
 
 exports.createCampaign = async (req, res) => {
@@ -256,6 +258,102 @@ exports.sendCampaign = async (req, res) => {
     res.status(200).json({
       status: 'success',
       message: 'Campaign is being sent'
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error.message
+    });
+  }
+};
+
+exports.sendSingleEmail = async (req, res) => {
+  try {
+    const { email, firstName, lastName, subject, body } = req.body;
+
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid email address'
+      });
+    }
+
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    // Handle file attachments
+    let attachments = [];
+    if (req.files && req.files.length > 0) {
+      attachments = req.files.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        contentType: file.mimetype
+      }));
+    }
+
+    // Send email
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: email,
+        subject,
+        html: body,
+        attachments
+      });
+
+      // Log the sent email
+      await SingleEmail.create({
+        sender: req.user._id,
+        recipient: { email, firstName, lastName },
+        subject,
+        body,
+        attachments,
+        status: 'sent'
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Email sent successfully'
+      });
+    } catch (error) {
+      // Log failed attempt
+      await SingleEmail.create({
+        sender: req.user._id,
+        recipient: { email, firstName, lastName },
+        subject,
+        body,
+        attachments,
+        status: 'failed',
+        error: error.message
+      });
+
+      throw error;
+    }
+  } catch (error) {
+    res.status(400).json({
+      status: 'fail',
+      message: error.message
+    });
+  }
+};
+
+exports.getSingleEmails = async (req, res) => {
+  try {
+    const emails = await SingleEmail.find({ sender: req.user._id })
+      .sort({ sentAt: -1 })
+      .limit(100);
+
+    res.status(200).json({
+      status: 'success',
+      data: { emails }
     });
   } catch (error) {
     res.status(400).json({
