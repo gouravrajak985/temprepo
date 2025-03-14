@@ -53,11 +53,6 @@ const campaignSchema = new mongoose.Schema({
       default: new Map()
     }
   }],
-  attachments: [{
-    filename: String,
-    path: String,
-    contentType: String
-  }],
   analytics: {
     totalRecipients: { type: Number, default: 0 },
     sent: { type: Number, default: 0 },

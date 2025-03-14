@@ -5,7 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { Upload, X, Plus, Mail, User, ArrowLeft } from 'lucide-react';
+import { Upload, Mail, User, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,6 @@ function CreateCampaign() {
   const navigate = useNavigate();
   const { createCampaign } = useCampaignStore();
   const [emailBody, setEmailBody] = useState('');
-  const [attachments, setAttachments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [recipients, setRecipients] = useState([{ email: '', firstName: '', lastName: '' }]);
   const [inputMethod, setInputMethod] = useState('manual'); // 'manual' or 'csv'
@@ -31,15 +30,6 @@ function CreateCampaign() {
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema)
   });
-
-  const handleAttachmentChange = (e) => {
-    const files = Array.from(e.target.files);
-    setAttachments((prev) => [...prev, ...files]);
-  };
-
-  const removeAttachment = (index) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const addRecipient = () => {
     setRecipients([...recipients, { email: '', firstName: '', lastName: '' }]);
@@ -109,11 +99,7 @@ function CreateCampaign() {
       formData.append('subject', data.subject);
       formData.append('body', emailBody);
       formData.append('recipients', JSON.stringify(finalRecipients));
-      
-      attachments.forEach((file) => {
-        formData.append('attachments', file);
-      });
-
+      console.log(formData);
       const result = await createCampaign(formData);
       
       if (result.success) {
@@ -249,7 +235,6 @@ function CreateCampaign() {
                             className="mt-4 text-destructive hover:text-destructive/90"
                             onClick={() => removeRecipient(index)}
                           >
-                            <X className="h-4 w-4 mr-2" />
                             Remove Recipient
                           </Button>
                         )}
@@ -261,7 +246,6 @@ function CreateCampaign() {
                     variant="outline"
                     onClick={addRecipient}
                   >
-                    <Plus className="h-4 w-4 mr-2" />
                     Add Recipient
                   </Button>
                 </div>
@@ -282,53 +266,16 @@ function CreateCampaign() {
 
             <div className="space-y-2">
               <Label>Attachments</Label>
-              <div className="mt-1 border-2 border-dashed rounded-lg p-6">
+              <div className="mt-1 border-2 border-dashed rounded-lg p-6 bg-muted/50 cursor-not-allowed">
                 <div className="text-center">
                   <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
                   <div className="mt-4">
-                    <Label
-                      htmlFor="attachments"
-                      className="relative cursor-pointer rounded-md bg-white font-medium text-primary hover:text-primary/90"
-                    >
-                      <span>Upload files</span>
-                      <Input
-                        id="attachments"
-                        type="file"
-                        multiple
-                        onChange={handleAttachmentChange}
-                        className="sr-only"
-                      />
-                    </Label>
-                    <p className="pl-1 text-sm text-muted-foreground">
-                      or drag and drop
+                    <p className="text-sm text-muted-foreground">
+                      Attachment feature coming soon
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    PDF, DOC, DOCX, XLS, XLSX up to 10MB each
-                  </p>
                 </div>
               </div>
-              {attachments.length > 0 && (
-                <ul className="mt-4 space-y-2">
-                  {attachments.map((file, index) => (
-                    <li
-                      key={index}
-                      className="flex items-center justify-between py-2 px-3 bg-muted rounded-md"
-                    >
-                      <span className="text-sm">{file.name}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive/90"
-                        onClick={() => removeAttachment(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </CardContent>
         </Card>

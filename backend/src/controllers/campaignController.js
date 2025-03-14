@@ -74,16 +74,6 @@ exports.createCampaign = async (req, res) => {
       }
     });
 
-    // Handle file attachments if present
-    if (req.files && req.files.length > 0) {
-      campaign.attachments = req.files.map(file => ({
-        filename: file.originalname,
-        path: file.path,
-        contentType: file.mimetype
-      }));
-      await campaign.save();
-    }
-
     // Create email trackers and queue emails immediately
     const emailTrackers = await Promise.all(
       campaign.recipients.map(recipient =>
@@ -114,6 +104,61 @@ exports.createCampaign = async (req, res) => {
     });
   } catch (error) {
     console.error('Campaign creation error:', error);
+    res.status(400).json({
+      status: 'fail',
+      message: error.message
+    });
+  }
+};
+
+exports.sendSingleEmail = async (req, res) => {
+  try {
+    const { email, firstName, lastName, subject, body } = req.body;
+
+    // Validate email
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid email address'
+      });
+    }
+
+    // Send email
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: email,
+        subject,
+        html: body
+      });
+
+      // Log the sent email
+      await SingleEmail.create({
+        sender: req.user._id,
+        recipient: { email, firstName, lastName },
+        subject,
+        body,
+        status: 'sent'
+      });
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Email sent successfully'
+      });
+    } catch (error) {
+      // Log failed attempt
+      await SingleEmail.create({
+        sender: req.user._id,
+        recipient: { email, firstName, lastName },
+        subject,
+        body,
+        status: 'failed',
+        error: error.message
+      });
+
+      throw error;
+    }
+  } catch (error) {
     res.status(400).json({
       status: 'fail',
       message: error.message
@@ -299,74 +344,6 @@ exports.sendCampaign = async (req, res) => {
       status: 'success',
       message: 'Campaign is being sent'
     });
-  } catch (error) {
-    res.status(400).json({
-      status: 'fail',
-      message: error.message
-    });
-  }
-};
-
-exports.sendSingleEmail = async (req, res) => {
-  try {
-    const { email, firstName, lastName, subject, body } = req.body;
-
-    // Validate email
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({
-        status: 'fail',
-        message: 'Invalid email address'
-      });
-    }
-
-    // Handle file attachments
-    let attachments = [];
-    if (req.files && req.files.length > 0) {
-      attachments = req.files.map(file => ({
-        filename: file.originalname,
-        path: file.path,
-        contentType: file.mimetype
-      }));
-    }
-
-    // Send email
-    try {
-      await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
-        to: email,
-        subject,
-        html: body,
-        attachments
-      });
-
-      // Log the sent email
-      await SingleEmail.create({
-        sender: req.user._id,
-        recipient: { email, firstName, lastName },
-        subject,
-        body,
-        attachments,
-        status: 'sent'
-      });
-
-      res.status(200).json({
-        status: 'success',
-        message: 'Email sent successfully'
-      });
-    } catch (error) {
-      // Log failed attempt
-      await SingleEmail.create({
-        sender: req.user._id,
-        recipient: { email, firstName, lastName },
-        subject,
-        body,
-        attachments,
-        status: 'failed',
-        error: error.message
-      });
-
-      throw error;
-    }
   } catch (error) {
     res.status(400).json({
       status: 'fail',

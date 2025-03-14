@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Mail, User, Clock, CheckCircle, XCircle, ArrowLeft, Paperclip } from 'lucide-react';
+import { Mail, User, Clock, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import useEmailStore from '../store/emailStore';
@@ -85,25 +85,6 @@ function EmailDetails() {
                 )}
               </div>
             </div>
-
-            {email.attachments.length > 0 && (
-              <div className="pt-4">
-                <h3 className="text-sm font-medium mb-2 flex items-center">
-                  <Paperclip className="h-4 w-4 mr-1" />
-                  Attachments ({email.attachments.length})
-                </h3>
-                <div className="space-y-2">
-                  {email.attachments.map((attachment, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between py-2 px-3 bg-muted rounded-md"
-                    >
-                      <span className="text-sm">{attachment.filename}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {email.status === 'failed' && email.error && (
               <div className="pt-4">

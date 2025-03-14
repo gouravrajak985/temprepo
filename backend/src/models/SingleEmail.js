@@ -30,11 +30,6 @@ const singleEmailSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  attachments: [{
-    filename: String,
-    path: String,
-    contentType: String
-  }],
   status: {
     type: String,
     enum: ['sent', 'failed'],
