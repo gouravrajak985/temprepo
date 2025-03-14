@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import OTPVerification from '@/components/OTPVerification';
 import useAuthStore from '../store/authStore';
 
 const schema = yup.object().shape({
@@ -24,24 +25,27 @@ const schema = yup.object().shape({
 function Register() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const register = useAuthStore(state => state.register);
+  const { register: registerUser, pendingVerification, user } = useAuthStore();
   
-  const { register: registerField, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema)
   });
 
   const onSubmit = async (data) => {
     setLoading(true);
-    const result = await register(data);
+    const result = await registerUser(data);
     setLoading(false);
 
     if (result.success) {
-      toast.success('Registration successful!');
-      navigate('/');
+      toast.success('Please verify your email');
     } else {
       toast.error(result.error);
     }
   };
+
+  if (pendingVerification) {
+    return <OTPVerification email={user.email} />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -62,7 +66,7 @@ function Register() {
                   <Input
                     id="firstName"
                     className="pl-10"
-                    {...registerField('firstName')}
+                    {...register('firstName')}
                   />
                 </div>
                 {errors.firstName && (
@@ -76,7 +80,7 @@ function Register() {
                   <Input
                     id="lastName"
                     className="pl-10"
-                    {...registerField('lastName')}
+                    {...register('lastName')}
                   />
                 </div>
                 {errors.lastName && (
@@ -92,7 +96,7 @@ function Register() {
                   id="email"
                   type="email"
                   className="pl-10"
-                  {...registerField('email')}
+                  {...register('email')}
                 />
               </div>
               {errors.email && (
@@ -107,7 +111,7 @@ function Register() {
                   id="password"
                   type="password"
                   className="pl-10"
-                  {...registerField('password')}
+                  {...register('password')}
                 />
               </div>
               {errors.password && (
@@ -121,7 +125,7 @@ function Register() {
                 <Input
                   id="company"
                   className="pl-10"
-                  {...registerField('company')}
+                  {...register('company')}
                 />
               </div>
               {errors.company && (
