@@ -1,17 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Mail, BarChart2, LogOut } from 'lucide-react';
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Typography,
-  Button,
-  Avatar,
-  Divider
-} from '@mui/material';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
 import useAuthStore from '../store/authStore';
 
 function Sidebar() {
@@ -25,86 +17,69 @@ function Sidebar() {
     { name: 'Analytics', href: '/analytics', icon: BarChart2 },
   ];
 
-  const drawerWidth = 280;
-
   return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        display: { xs: 'none', lg: 'block' },
-        '& .MuiDrawer-paper': {
-          width: drawerWidth,
-          boxSizing: 'border-box',
-          bgcolor: 'background.paper',
-          borderRight: '1px solid',
-          borderColor: 'divider',
-        },
-      }}
-    >
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-          Email Campaign
-        </Typography>
-      </Box>
+    <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+      <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-background px-6 pb-4">
+        <div className="flex h-16 items-center">
+          <h2 className="text-lg font-semibold">Email Campaign</h2>
+        </div>
+        
+        <nav className="flex flex-1 flex-col">
+          <ul role="list" className="flex flex-1 flex-col gap-y-7">
+            <li>
+              <ul role="list" className="-mx-2 space-y-1">
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <li key={item.name}>
+                      <Button
+                        asChild
+                        variant={isActive ? "secondary" : "ghost"}
+                        className="w-full justify-start"
+                      >
+                        <Link to={item.href}>
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.name}
+                        </Link>
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </li>
+          </ul>
+        </nav>
 
-      <List sx={{ px: 2 }}>
-        {navigation.map((item) => {
-          const isActive = location.pathname === item.href;
-          return (
-            <ListItem
-              key={item.name}
-              component={Link}
-              to={item.href}
-              sx={{
-                borderRadius: 1,
-                mb: 0.5,
-                bgcolor: isActive ? 'action.selected' : 'transparent',
-                '&:hover': {
-                  bgcolor: 'action.hover',
-                },
-              }}
+        <div className="mt-auto">
+          <Separator className="my-4" />
+          <Card className="p-4">
+            <div className="flex items-center gap-4">
+              <Avatar>
+                <AvatarFallback>
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">
+                  {user?.firstName} {user?.lastName}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {user?.email}
+                </span>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="mt-4 w-full"
+              onClick={logout}
             >
-              <ListItemIcon sx={{ color: isActive ? 'primary.main' : 'text.secondary' }}>
-                <item.icon />
-              </ListItemIcon>
-              <ListItemText 
-                primary={item.name}
-                sx={{ color: isActive ? 'primary.main' : 'text.primary' }}
-              />
-            </ListItem>
-          );
-        })}
-      </List>
-
-      <Box sx={{ mt: 'auto', p: 2 }}>
-        <Divider sx={{ mb: 2 }} />
-        <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar sx={{ bgcolor: 'primary.main' }}>
-            {user?.firstName?.[0]}
-          </Avatar>
-          <Box>
-            <Typography variant="subtitle1">
-              {user?.firstName} {user?.lastName}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {user?.email}
-            </Typography>
-          </Box>
-        </Box>
-        <Button
-          fullWidth
-          startIcon={<LogOut />}
-          onClick={logout}
-          variant="outlined"
-          color="primary"
-          sx={{ mt: 2 }}
-        >
-          Sign out
-        </Button>
-      </Box>
-    </Drawer>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </Button>
+          </Card>
+        </div>
+      </div>
+    </div>
   );
 }
 
