@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,11 +68,17 @@ function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <Card className="w-full max-w-lg">
+        <div className="flex flex-col items-center mt-8 mb-4">
+          <div className="flex items-center gap-2 text-primary">
+            <Send className="h-8 w-8" />
+            <h1 className="text-3xl font-bold">EzyMail</h1>
+          </div>
+        </div>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">Sign in</CardTitle>
+          <CardDescription className="text-center">
             Choose your preferred sign in method
           </CardDescription>
         </CardHeader>
@@ -152,7 +158,7 @@ function Login() {
             </TabsContent>
           </Tabs>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex flex-col space-y-4">
           <p className="text-sm text-center text-muted-foreground w-full">
             Don't have an account?{' '}
             <Link to="/register" className="text-primary underline-offset-4 hover:underline">
@@ -161,6 +167,9 @@ function Login() {
           </p>
         </CardFooter>
       </Card>
+      <p className="mt-8 text-sm text-muted-foreground" style={{ fontFamily: 'Space Mono, monospace' }}>
+        Powered by Avirrav
+      </p>
     </div>
   );
 }

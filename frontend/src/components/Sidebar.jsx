@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Mail, BarChart2, LogOut } from 'lucide-react';
+import { LayoutDashboard, Mail, BarChart2, LogOut, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -20,8 +20,9 @@ function Sidebar() {
   return (
     <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r bg-background px-6 pb-4">
-        <div className="flex h-16 items-center">
-          <h2 className="text-lg font-semibold">Email Campaign</h2>
+        <div className="flex h-16 items-center gap-2">
+          <Send className="h-6 w-6" />
+          <h2 className="text-xl font-bold">EzyMail</h2>
         </div>
         
         <nav className="flex flex-1 flex-col">
@@ -50,8 +51,8 @@ function Sidebar() {
           </ul>
         </nav>
 
-        <div className="mt-auto">
-          <Separator className="my-4" />
+        <div className="mt-auto space-y-4">
+          <Separator />
           <Card className="p-4">
             <div className="flex items-center gap-4">
               <Avatar>
@@ -77,6 +78,9 @@ function Sidebar() {
               Sign out
             </Button>
           </Card>
+          <p className="text-sm text-center text-muted-foreground" style={{ fontFamily: 'Space Mono, monospace' }}>
+            Powered by Avirrav
+          </p>
         </div>
       </div>
     </div>

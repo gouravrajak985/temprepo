@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { Mail, Lock, User, Building } from 'lucide-react';
+import { Mail, Lock, User, Building, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,11 +48,17 @@ function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <Card className="w-full max-w-lg">
+        <div className="flex flex-col items-center mt-8 mb-4">
+          <div className="flex items-center gap-2 text-primary">
+            <Send className="h-8 w-8" />
+            <h1 className="text-3xl font-bold">EzyMail</h1>
+          </div>
+        </div>
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
+          <CardDescription className="text-center">
             Enter your information to create your account
           </CardDescription>
         </CardHeader>
@@ -150,6 +156,9 @@ function Register() {
           </CardFooter>
         </form>
       </Card>
+      <p className="mt-8 text-sm text-muted-foreground" style={{ fontFamily: 'Space Mono, monospace' }}>
+        Powered by Avirrav
+      </p>
     </div>
   );
 }
