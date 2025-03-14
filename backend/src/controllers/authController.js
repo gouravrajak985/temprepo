@@ -1,14 +1,17 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const dotenv = require("dotenv");
+dotenv.config();
+
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: process.env.SMTP_PORT,
+  host:process.env.SMTP_HOST,
+  port:process.env.SMTP_PORT,
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
+    user:process.env.SMTP_USER, // Replace with your API Key
+    pass:process.env.SMTP_PASS, // Same as Username
+  },
 });
 
 const signToken = (id) => {
@@ -18,17 +21,28 @@ const signToken = (id) => {
 };
 
 const sendOTPEmail = async (email, otp) => {
-  await transporter.sendMail({
-    from: process.env.EMAIL_FROM,
+  console.log(email, "This is email where otp will be send");
+  console.log(otp, "This is the otp coming sendOTP Email")
+
+  const mailOptions = {
+    from:process.env.EMAIL_FROM, // Must be your verified email
     to: email,
-    subject: 'Your OTP for Email Verification',
+    subject: "OTP for Verification on Avirrav",
     html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2>Email Verification</h2>
-        <p>Your OTP for email verification is: <strong>${otp}</strong></p>
-        <p>This OTP will expire in 10 minutes.</p>
-      </div>
-    `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h2>Email Verification</h2>
+      <p>Your OTP for email verification is: <strong>${otp}</strong></p>
+      <p>This OTP will expire in 10 minutes.</p>
+    </div>
+  `,
+  };
+  
+  await transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error:", error);
+    } else {
+      console.log("Email sent:", info.response);
+    }
   });
 };
 
@@ -235,6 +249,7 @@ exports.loginWithOTP = async (req, res) => {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
+    console.log(user, "This is user")
     if (!user) {
       return res.status(404).json({
         status: 'fail',
@@ -243,6 +258,7 @@ exports.loginWithOTP = async (req, res) => {
     }
 
     const otp = user.generateOTP();
+    console.log(otp);
     await user.save();
     await sendOTPEmail(user.email, otp);
 
