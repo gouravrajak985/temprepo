@@ -12,6 +12,21 @@ import {
 } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
 import { format, subDays } from 'date-fns';
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper
+} from '@mui/material';
 import useCampaignStore from '../store/campaignStore';
 
 ChartJS.register(
@@ -34,9 +49,9 @@ function Analytics() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
@@ -67,20 +82,20 @@ function Analytics() {
       {
         label: 'Sent',
         data: last7Days.map(date => campaignsByDate[date]?.sent || 0),
-        borderColor: 'rgb(53, 162, 235)',
-        backgroundColor: 'rgba(53, 162, 235, 0.5)',
+        borderColor: '#1976d2',
+        backgroundColor: 'rgba(25, 118, 210, 0.5)',
       },
       {
         label: 'Opened',
         data: last7Days.map(date => campaignsByDate[date]?.opened || 0),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+        borderColor: '#2e7d32',
+        backgroundColor: 'rgba(46, 125, 50, 0.5)',
       },
       {
         label: 'Clicked',
         data: last7Days.map(date => campaignsByDate[date]?.clicked || 0),
-        borderColor: 'rgb(255, 206, 86)',
-        backgroundColor: 'rgba(255, 206, 86, 0.5)',
+        borderColor: '#ed6c02',
+        backgroundColor: 'rgba(237, 108, 2, 0.5)',
       },
     ],
   };
@@ -108,16 +123,16 @@ function Analytics() {
           totalStats.failed,
         ],
         backgroundColor: [
-          'rgba(53, 162, 235, 0.5)',
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
-          'rgba(255, 99, 132, 0.5)',
+          'rgba(25, 118, 210, 0.6)',
+          'rgba(46, 125, 50, 0.6)',
+          'rgba(237, 108, 2, 0.6)',
+          'rgba(211, 47, 47, 0.6)',
         ],
         borderColor: [
-          'rgba(53, 162, 235, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(255, 99, 132, 1)',
+          '#1976d2',
+          '#2e7d32',
+          '#ed6c02',
+          '#d32f2f',
         ],
         borderWidth: 1,
       },
@@ -130,175 +145,233 @@ function Analytics() {
   const bounceRate = totalStats.sent ? ((totalStats.failed / totalStats.sent) * 100).toFixed(1) : 0;
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Campaign Analytics</h1>
+    <Box>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Campaign Analytics
+      </Typography>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-md bg-blue-500 text-white">
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    mr: 2,
+                  }}
+                >
                   {openRate}%
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                </Box>
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
                     Open Rate
-                  </dt>
-                  <dd className="text-sm text-gray-900">
-                    {totalStats.opened} of {totalStats.sent} emails
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+                  </Typography>
+                  <Typography variant="body1">
+                    {totalStats.opened} of {totalStats.sent}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-md bg-green-500 text-white">
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'success.main',
+                    color: 'success.contrastText',
+                    mr: 2,
+                  }}
+                >
                   {clickRate}%
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                </Box>
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
                     Click Rate
-                  </dt>
-                  <dd className="text-sm text-gray-900">
-                    {totalStats.clicked} of {totalStats.opened} opens
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+                  </Typography>
+                  <Typography variant="body1">
+                    {totalStats.clicked} of {totalStats.opened}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-md bg-red-500 text-white">
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'error.main',
+                    color: 'error.contrastText',
+                    mr: 2,
+                  }}
+                >
                   {bounceRate}%
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                </Box>
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
                     Bounce Rate
-                  </dt>
-                  <dd className="text-sm text-gray-900">
-                    {totalStats.failed} of {totalStats.sent} emails
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+                  </Typography>
+                  <Typography variant="body1">
+                    {totalStats.failed} of {totalStats.sent}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="flex items-center justify-center h-12 w-12 rounded-md bg-purple-500 text-white">
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Box
+                  sx={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'secondary.main',
+                    color: 'secondary.contrastText',
+                    mr: 2,
+                  }}
+                >
                   {campaigns.length}
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                </Box>
+                <Box>
+                  <Typography color="text.secondary" variant="body2">
                     Total Campaigns
-                  </dt>
-                  <dd className="text-sm text-gray-900">
+                  </Typography>
+                  <Typography variant="body1">
                     Active: {campaigns.filter(c => c.status === 'sending').length}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Email Performance (Last 7 Days)
-          </h3>
-          <Line
-            data={lineChartData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top',
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  ticks: {
-                    stepSize: 1,
-                  },
-                },
-              },
-            }}
-          />
-        </div>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Email Performance (Last 7 Days)
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <Line
+                  data={lineChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        ticks: {
+                          stepSize: 1,
+                        },
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Overall Campaign Performance
-          </h3>
-          <Pie
-            data={pieChartData}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top',
-                },
-              },
-            }}
-          />
-        </div>
-      </div>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Overall Campaign Performance
+              </Typography>
+              <Box sx={{ height: 300 }}>
+                <Pie
+                  data={pieChartData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      },
+                    },
+                  }}
+                />
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
 
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <div className="px-4 py-5 sm:px-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Recent Campaign Performance
-          </h3>
-        </div>
-        <div className="border-t border-gray-200">
-          <div className="bg-gray-50 px-4 py-3 sm:px-6">
-            <div className="grid grid-cols-6 text-sm font-medium text-gray-500">
-              <div className="col-span-2">Campaign</div>
-              <div>Sent</div>
-              <div>Opened</div>
-              <div>Clicked</div>
-              <div>Failed</div>
-            </div>
-          </div>
-          <div className="divide-y divide-gray-200">
-            {campaigns.slice(0, 5).map((campaign) => (
-              <div key={campaign._id} className="px-4 py-3 sm:px-6">
-                <div className="grid grid-cols-6 text-sm text-gray-900">
-                  <div className="col-span-2">{campaign.name}</div>
-                  <div>{campaign.analytics.sent}</div>
-                  <div>{campaign.analytics.opened}</div>
-                  <div>{campaign.analytics.clicked}</div>
-                  <div>{campaign.analytics.failed}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+        <Grid item xs={12}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Recent Campaign Performance
+              </Typography>
+              <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                <Table stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Campaign</TableCell>
+                      <TableCell align="right">Sent</TableCell>
+                      <TableCell align="right">Opened</TableCell>
+                      <TableCell align="right">Clicked</TableCell>
+                      <TableCell align="right">Failed</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {campaigns.slice(0, 5).map((campaign) => (
+                      <TableRow key={campaign._id}>
+                        <TableCell component="th" scope="row">
+                          {campaign.name}
+                        </TableCell>
+                        <TableCell align="right">{campaign.analytics.sent}</TableCell>
+                        <TableCell align="right">{campaign.analytics.opened}</TableCell>
+                        <TableCell align="right">{campaign.analytics.clicked}</TableCell>
+                        <TableCell align="right">{campaign.analytics.failed}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 
