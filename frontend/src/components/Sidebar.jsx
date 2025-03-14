@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Mail, BarChart2, LogOut, Send } from 'lucide-react';
+import { LayoutDashboard, Mail, BarChart2, LogOut, Send, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -14,6 +14,7 @@ function Sidebar() {
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Campaigns', href: '/campaigns', icon: Mail },
+    { name: 'Single Emails', href: '/emails', icon: MessageSquare },
     { name: 'Analytics', href: '/analytics', icon: BarChart2 },
   ];
 
@@ -30,7 +31,7 @@ function Sidebar() {
             <li>
               <ul role="list" className="-mx-2 space-y-1">
                 {navigation.map((item) => {
-                  const isActive = location.pathname === item.href;
+                  const isActive = location.pathname.startsWith(item.href);
                   return (
                     <li key={item.name}>
                       <Button
