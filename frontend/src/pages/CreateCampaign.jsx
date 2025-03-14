@@ -17,7 +17,6 @@ import useCampaignStore from '../store/campaignStore';
 const schema = yup.object().shape({
   name: yup.string().required('Campaign name is required'),
   subject: yup.string().required('Email subject is required'),
-  scheduledFor: yup.string().nullable()
 });
 
 function CreateCampaign() {
@@ -94,21 +93,9 @@ function CreateCampaign() {
     return true;
   };
 
-  const validateScheduledDate = (date) => {
-    if (!date) return true;
-    const scheduledDate = new Date(date);
-    const now = new Date();
-    if (scheduledDate <= now) {
-      toast.error('Schedule date must be in the future');
-      return false;
-    }
-    return true;
-  };
-
   const onSubmit = async (data) => {
     try {
       if (!validateRecipients()) return;
-      if (!validateScheduledDate(data.scheduledFor)) return;
       
       setLoading(true);
       let finalRecipients = recipients;
@@ -121,7 +108,6 @@ function CreateCampaign() {
       formData.append('name', data.name);
       formData.append('subject', data.subject);
       formData.append('body', emailBody);
-      formData.append('scheduledFor', data.scheduledFor || '');
       formData.append('recipients', JSON.stringify(finalRecipients));
       
       attachments.forEach((file) => {
@@ -131,7 +117,7 @@ function CreateCampaign() {
       const result = await createCampaign(formData);
       
       if (result.success) {
-        toast.success('Campaign created successfully');
+        toast.success('Campaign created and started');
         navigate('/campaigns');
       } else {
         toast.error(result.error);
@@ -295,20 +281,6 @@ function CreateCampaign() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="scheduledFor">Schedule Send (Optional)</Label>
-              <Input
-                type="datetime-local"
-                id="scheduledFor"
-                {...register('scheduledFor')}
-                min={new Date().toISOString().slice(0, 16)}
-                defaultValue=""
-              />
-              {errors.scheduledFor && (
-                <p className="text-sm text-destructive">{errors.scheduledFor.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label>Attachments</Label>
               <div className="mt-1 border-2 border-dashed rounded-lg p-6">
                 <div className="text-center">
@@ -373,7 +345,7 @@ function CreateCampaign() {
             type="submit"
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Create Campaign'}
+            {loading ? 'Creating...' : 'Start Campaign'}
           </Button>
         </div>
       </form>

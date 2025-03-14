@@ -3,7 +3,23 @@ const EmailTracker = require('../models/EmailTracker');
 const SingleEmail = require('../models/SingleEmail');
 const Queue = require('bull');
 const nodemailer = require('nodemailer');
-const emailQueue = new Queue('email-queue');
+
+const emailQueue = new Queue('email-queue', {
+  redis: {
+    port: 6379,
+    host: '127.0.0.1'
+  }
+});
+
+// Create email transport
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  }
+});
 
 exports.createCampaign = async (req, res) => {
   try {
@@ -36,24 +52,13 @@ exports.createCampaign = async (req, res) => {
       });
     }
 
-    const scheduledFor = req.body.scheduledFor ? new Date(req.body.scheduledFor) : null;
-    
-    // Validate scheduled date is in the future
-    if (scheduledFor && scheduledFor <= new Date()) {
-      return res.status(400).json({
-        status: 'fail',
-        message: 'Scheduled date must be in the future'
-      });
-    }
-
-    // Create campaign with validated recipients
+    // Create campaign
     const campaign = await Campaign.create({
       name: req.body.name,
       subject: req.body.subject,
       body: req.body.body,
       sender: req.user._id,
-      status: scheduledFor ? 'scheduled' : 'sending',
-      scheduledFor,
+      status: 'sending',
       recipients: recipients.map(r => ({
         email: r.email,
         firstName: r.firstName || '',
@@ -79,46 +84,36 @@ exports.createCampaign = async (req, res) => {
       await campaign.save();
     }
 
-    // If no schedule is set, start the campaign immediately
-    if (!scheduledFor) {
-      // Create email trackers for each recipient
-      const emailTrackers = await Promise.all(
-        campaign.recipients.map(recipient =>
-          EmailTracker.create({
-            campaign: campaign._id,
-            recipient: {
-              email: recipient.email,
-              firstName: recipient.firstName,
-              lastName: recipient.lastName
-            }
-          })
-        )
-      );
+    // Create email trackers and queue emails immediately
+    const emailTrackers = await Promise.all(
+      campaign.recipients.map(recipient =>
+        EmailTracker.create({
+          campaign: campaign._id,
+          recipient: {
+            email: recipient.email,
+            firstName: recipient.firstName,
+            lastName: recipient.lastName
+          }
+        })
+      )
+    );
 
-      // Add emails to queue
-      await Promise.all(
-        emailTrackers.map(tracker =>
-          emailQueue.add('send-email', {
-            trackerId: tracker._id,
-            campaignId: campaign._id
-          })
-        )
-      );
-    } else {
-      // Schedule the campaign
-      const delay = scheduledFor.getTime() - Date.now();
-      emailQueue.add(
-        'schedule-campaign',
-        { campaignId: campaign._id },
-        { delay }
-      );
-    }
+    // Add emails to queue
+    await Promise.all(
+      emailTrackers.map(tracker =>
+        emailQueue.add('send-email', {
+          trackerId: tracker._id,
+          campaignId: campaign._id
+        })
+      )
+    );
 
     res.status(201).json({
       status: 'success',
       data: { campaign }
     });
   } catch (error) {
+    console.error('Campaign creation error:', error);
     res.status(400).json({
       status: 'fail',
       message: error.message
@@ -323,16 +318,6 @@ exports.sendSingleEmail = async (req, res) => {
         message: 'Invalid email address'
       });
     }
-
-    // Create transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
 
     // Handle file attachments
     let attachments = [];

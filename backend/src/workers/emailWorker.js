@@ -3,7 +3,12 @@ const nodemailer = require('nodemailer');
 const Campaign = require('../models/Campaign');
 const EmailTracker = require('../models/EmailTracker');
 
-const emailQueue = new Queue('email-queue');
+const emailQueue = new Queue('email-queue', {
+  redis: {
+    port: 6379,
+    host: '127.0.0.1'
+  }
+});
 
 // Create email transport
 const transporter = nodemailer.createTransport({
@@ -51,7 +56,16 @@ emailQueue.process('send-email', async (job) => {
       $inc: { 'analytics.sent': 1 }
     });
 
+    // Check if all emails have been sent
+    const updatedCampaign = await Campaign.findById(campaignId);
+    if (updatedCampaign.analytics.sent === updatedCampaign.analytics.totalRecipients) {
+      updatedCampaign.status = 'completed';
+      await updatedCampaign.save();
+    }
+
   } catch (error) {
+    console.error('Email sending error:', error);
+
     // Handle failure
     await EmailTracker.findByIdAndUpdate(trackerId, {
       status: 'failed',
@@ -63,55 +77,25 @@ emailQueue.process('send-email', async (job) => {
       $inc: { 'analytics.failed': 1 }
     });
 
-    throw error;
-  }
-});
-
-// Process scheduled campaigns
-emailQueue.process('schedule-campaign', async (job) => {
-  const { campaignId } = job.data;
-
-  try {
+    // Check if all attempts have failed
     const campaign = await Campaign.findById(campaignId);
-    
-    if (!campaign) {
-      throw new Error('Campaign not found');
+    const totalAttempted = campaign.analytics.sent + campaign.analytics.failed;
+    if (totalAttempted === campaign.analytics.totalRecipients) {
+      campaign.status = 'failed';
+      await campaign.save();
     }
 
-    // Create email trackers for each recipient
-    const emailTrackers = await Promise.all(
-      campaign.recipients.map(recipient =>
-        EmailTracker.create({
-          campaign: campaign._id,
-          recipient: {
-            email: recipient.email,
-            firstName: recipient.firstName,
-            lastName: recipient.lastName
-          }
-        })
-      )
-    );
-
-    // Add emails to queue
-    await Promise.all(
-      emailTrackers.map(tracker =>
-        emailQueue.add('send-email', {
-          trackerId: tracker._id,
-          campaignId: campaign._id
-        })
-      )
-    );
-
-    // Update campaign status
-    campaign.status = 'sending';
-    await campaign.save();
-
-  } catch (error) {
-    // Update campaign status to failed if there's an error
-    await Campaign.findByIdAndUpdate(campaignId, {
-      status: 'failed',
-      error: error.message
-    });
     throw error;
   }
 });
+
+// Process error handling
+emailQueue.on('error', (error) => {
+  console.error('Queue error:', error);
+});
+
+emailQueue.on('failed', (job, error) => {
+  console.error('Job failed:', error);
+});
+
+module.exports = emailQueue;

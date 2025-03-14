@@ -10,7 +10,23 @@ const useEmailStore = create((set) => ({
     set({ loading: true });
     try {
       const response = await axios.post('/campaigns/send-single', emailData);
-      set({ loading: false });
+      // Add the new email to the list immediately after sending
+      const newEmail = {
+        _id: Date.now().toString(), // Temporary ID until we fetch the real one
+        recipient: {
+          email: emailData.get('email'),
+          firstName: emailData.get('firstName'),
+          lastName: emailData.get('lastName')
+        },
+        subject: emailData.get('subject'),
+        body: emailData.get('body'),
+        status: 'sent',
+        sentAt: new Date().toISOString()
+      };
+      set(state => ({
+        singleEmails: [newEmail, ...state.singleEmails],
+        loading: false
+      }));
       return { success: true, message: response.data.message };
     } catch (error) {
       set({ 
