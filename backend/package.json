@@ -4,8 +4,8 @@
   "description": "Backend for email campaign platform",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
