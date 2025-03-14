@@ -27,6 +27,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  otp: {
+    code: String,
+    expiresAt: Date
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -43,6 +51,23 @@ userSchema.pre('save', async function(next) {
 // Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Generate OTP
+userSchema.methods.generateOTP = function() {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  this.otp = {
+    code: otp,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000) // OTP expires in 10 minutes
+  };
+  return otp;
+};
+
+// Verify OTP
+userSchema.methods.verifyOTP = function(code) {
+  return this.otp &&
+    this.otp.code === code &&
+    this.otp.expiresAt > new Date();
 };
 
 module.exports = mongoose.model('User', userSchema);
