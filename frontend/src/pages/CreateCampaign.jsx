@@ -17,7 +17,7 @@ import useCampaignStore from '../store/campaignStore';
 const schema = yup.object().shape({
   name: yup.string().required('Campaign name is required'),
   subject: yup.string().required('Email subject is required'),
-  scheduledFor: yup.date().nullable().min(new Date(), 'Schedule date must be in the future'),
+  scheduledFor: yup.string().nullable()
 });
 
 function CreateCampaign() {
@@ -94,9 +94,21 @@ function CreateCampaign() {
     return true;
   };
 
+  const validateScheduledDate = (date) => {
+    if (!date) return true;
+    const scheduledDate = new Date(date);
+    const now = new Date();
+    if (scheduledDate <= now) {
+      toast.error('Schedule date must be in the future');
+      return false;
+    }
+    return true;
+  };
+
   const onSubmit = async (data) => {
     try {
       if (!validateRecipients()) return;
+      if (!validateScheduledDate(data.scheduledFor)) return;
       
       setLoading(true);
       let finalRecipients = recipients;
@@ -288,6 +300,8 @@ function CreateCampaign() {
                 type="datetime-local"
                 id="scheduledFor"
                 {...register('scheduledFor')}
+                min={new Date().toISOString().slice(0, 16)}
+                defaultValue=""
               />
               {errors.scheduledFor && (
                 <p className="text-sm text-destructive">{errors.scheduledFor.message}</p>

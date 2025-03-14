@@ -36,14 +36,24 @@ exports.createCampaign = async (req, res) => {
       });
     }
 
+    const scheduledFor = req.body.scheduledFor ? new Date(req.body.scheduledFor) : null;
+    
+    // Validate scheduled date is in the future
+    if (scheduledFor && scheduledFor <= new Date()) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Scheduled date must be in the future'
+      });
+    }
+
     // Create campaign with validated recipients
     const campaign = await Campaign.create({
       name: req.body.name,
       subject: req.body.subject,
       body: req.body.body,
       sender: req.user._id,
-      status: req.body.scheduledFor ? 'scheduled' : 'draft',
-      scheduledFor: req.body.scheduledFor || null,
+      status: scheduledFor ? 'scheduled' : 'sending',
+      scheduledFor,
       recipients: recipients.map(r => ({
         email: r.email,
         firstName: r.firstName || '',
@@ -67,6 +77,41 @@ exports.createCampaign = async (req, res) => {
         contentType: file.mimetype
       }));
       await campaign.save();
+    }
+
+    // If no schedule is set, start the campaign immediately
+    if (!scheduledFor) {
+      // Create email trackers for each recipient
+      const emailTrackers = await Promise.all(
+        campaign.recipients.map(recipient =>
+          EmailTracker.create({
+            campaign: campaign._id,
+            recipient: {
+              email: recipient.email,
+              firstName: recipient.firstName,
+              lastName: recipient.lastName
+            }
+          })
+        )
+      );
+
+      // Add emails to queue
+      await Promise.all(
+        emailTrackers.map(tracker =>
+          emailQueue.add('send-email', {
+            trackerId: tracker._id,
+            campaignId: campaign._id
+          })
+        )
+      );
+    } else {
+      // Schedule the campaign
+      const delay = scheduledFor.getTime() - Date.now();
+      emailQueue.add(
+        'schedule-campaign',
+        { campaignId: campaign._id },
+        { delay }
+      );
     }
 
     res.status(201).json({

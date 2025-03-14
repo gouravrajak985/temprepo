@@ -7,7 +7,6 @@ const emailQueue = new Queue('email-queue');
 
 // Create email transport
 const transporter = nodemailer.createTransport({
-  // Configure your email service here
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
   auth: {
@@ -64,6 +63,55 @@ emailQueue.process('send-email', async (job) => {
       $inc: { 'analytics.failed': 1 }
     });
 
+    throw error;
+  }
+});
+
+// Process scheduled campaigns
+emailQueue.process('schedule-campaign', async (job) => {
+  const { campaignId } = job.data;
+
+  try {
+    const campaign = await Campaign.findById(campaignId);
+    
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+
+    // Create email trackers for each recipient
+    const emailTrackers = await Promise.all(
+      campaign.recipients.map(recipient =>
+        EmailTracker.create({
+          campaign: campaign._id,
+          recipient: {
+            email: recipient.email,
+            firstName: recipient.firstName,
+            lastName: recipient.lastName
+          }
+        })
+      )
+    );
+
+    // Add emails to queue
+    await Promise.all(
+      emailTrackers.map(tracker =>
+        emailQueue.add('send-email', {
+          trackerId: tracker._id,
+          campaignId: campaign._id
+        })
+      )
+    );
+
+    // Update campaign status
+    campaign.status = 'sending';
+    await campaign.save();
+
+  } catch (error) {
+    // Update campaign status to failed if there's an error
+    await Campaign.findByIdAndUpdate(campaignId, {
+      status: 'failed',
+      error: error.message
+    });
     throw error;
   }
 });
