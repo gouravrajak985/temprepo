@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Mail, Users, Clock, Send, AlertTriangle } from 'lucide-react';
+import { Mail, Users, Clock, Send, AlertTriangle, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
-import useCampaignStore from '../store/campaignStore';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +15,7 @@ import {
   Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import useCampaignStore from '../store/campaignStore';
 
 ChartJS.register(
   CategoryScale,
@@ -36,8 +38,8 @@ function CampaignDetails() {
 
   if (loading || !currentCampaign) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent"></div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
       </div>
     );
   }
@@ -75,14 +77,6 @@ function CampaignDetails() {
           'rgba(54, 162, 235, 0.5)',
           'rgba(255, 99, 132, 0.5)',
         ],
-        borderColor: [
-          'rgba(53, 162, 235, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 99, 132, 1)',
-        ],
-        borderWidth: 1,
       },
     ],
   };
@@ -108,123 +102,117 @@ function CampaignDetails() {
     },
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'sending': return 'bg-blue-100 text-blue-800';
+      case 'scheduled': return 'bg-purple-100 text-purple-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            {currentCampaign.name}
-          </h2>
-        </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
-          <button
-            type="button"
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <Button
+            variant="ghost"
+            className="mb-2"
             onClick={() => navigate('/campaigns')}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Campaigns
-          </button>
-          {currentCampaign.status === 'draft' && (
-            <button
-              type="button"
-              onClick={handleSendCampaign}
-              disabled={sendingStatus}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {sendingStatus ? 'Sending...' : 'Send Campaign'}
-            </button>
-          )}
+          </Button>
+          <h1 className="text-3xl font-bold tracking-tight">{currentCampaign.name}</h1>
         </div>
+        {currentCampaign.status === 'draft' && (
+          <Button
+            onClick={handleSendCampaign}
+            disabled={sendingStatus}
+          >
+            <Send className="mr-2 h-4 w-4" />
+            {sendingStatus ? 'Sending...' : 'Send Campaign'}
+          </Button>
+        )}
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Campaign Details
-            </h3>
-            <div className="mt-6 grid grid-cols-1 gap-4">
-              <div className="flex items-center">
-                <Mail className="h-5 w-5 text-gray-400 mr-2" />
-                <span className="text-sm font-medium text-gray-500">Subject:</span>
-                <span className="ml-2 text-sm text-gray-900">{currentCampaign.subject}</span>
-              </div>
-              <div className="flex items-center">
-                <Users className="h-5 w-5 text-gray-400 mr-2" />
-                <span className="text-sm font-medium text-gray-500">Recipients:</span>
-                <span className="ml-2 text-sm text-gray-900">
-                  {currentCampaign.analytics.totalRecipients}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Subject:</span>
+              <span className="text-sm">{currentCampaign.subject}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Recipients:</span>
+              <span className="text-sm">{currentCampaign.analytics.totalRecipients}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Created:</span>
+              <span className="text-sm">
+                {format(new Date(currentCampaign.createdAt), 'PPp')}
+              </span>
+            </div>
+            {currentCampaign.scheduledFor && (
+              <div className="flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Scheduled For:</span>
+                <span className="text-sm">
+                  {format(new Date(currentCampaign.scheduledFor), 'PPp')}
                 </span>
               </div>
-              <div className="flex items-center">
-                <Clock className="h-5 w-5 text-gray-400 mr-2" />
-                <span className="text-sm font-medium text-gray-500">Created:</span>
-                <span className="ml-2 text-sm text-gray-900">
-                  {format(new Date(currentCampaign.createdAt), 'PPp')}
-                </span>
-              </div>
-              {currentCampaign.scheduledFor && (
-                <div className="flex items-center">
-                  <Clock className="h-5 w-5 text-gray-400 mr-2" />
-                  <span className="text-sm font-medium text-gray-500">Scheduled For:</span>
-                  <span className="ml-2 text-sm text-gray-900">
-                    {format(new Date(currentCampaign.scheduledFor), 'PPp')}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center">
-                <AlertTriangle className="h-5 w-5 text-gray-400 mr-2" />
-                <span className="text-sm font-medium text-gray-500">Status:</span>
-                <span className={`
-                  ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                  ${currentCampaign.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    currentCampaign.status === 'failed' ? 'bg-red-100 text-red-800' :
-                    currentCampaign.status === 'sending' ? 'bg-blue-100 text-blue-800' :
-                    currentCampaign.status === 'scheduled' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'}
-                `}>
-                  {currentCampaign.status}
-                </span>
-              </div>
+            )}
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Status:</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(currentCampaign.status)}`}>
+                {currentCampaign.status}
+              </span>
             </div>
 
             {currentCampaign.attachments && currentCampaign.attachments.length > 0 && (
               <div className="mt-6">
-                <h4 className="text-sm font-medium text-gray-900">Attachments</h4>
-                <ul className="mt-2 divide-y divide-gray-200">
+                <h4 className="text-sm font-medium mb-2">Attachments</h4>
+                <div className="space-y-2">
                   {currentCampaign.attachments.map((attachment, index) => (
-                    <li key={index} className="py-2 flex items-center justify-between">
-                      <span className="text-sm text-gray-500">{attachment.filename}</span>
-                    </li>
+                    <div key={index} className="flex items-center justify-between py-2 px-3 bg-muted rounded-md">
+                      <span className="text-sm">{attachment.filename}</span>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Campaign Analytics
-            </h3>
-            <div className="mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Analytics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
               <Bar data={chartData} options={chartOptions} />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="lg:col-span-2 bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900">
-              Email Content
-            </h3>
-            <div className="mt-4 prose max-w-none">
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Email Content</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="prose max-w-none dark:prose-invert">
               <div dangerouslySetInnerHTML={{ __html: currentCampaign.body }} />
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -5,8 +5,13 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { Upload, X, Plus, Mail, User } from 'lucide-react';
+import { Upload, X, Plus, Mail, User, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import useCampaignStore from '../store/campaignStore';
 
 const schema = yup.object().shape({
@@ -127,263 +132,235 @@ function CreateCampaign() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-            Create New Campaign
-          </h2>
-        </div>
+    <div>
+      <div className="flex items-center mb-6">
+        <Button
+          variant="ghost"
+          className="mr-4"
+          onClick={() => navigate('/campaigns')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Campaigns
+        </Button>
+        <h1 className="text-3xl font-bold tracking-tight">Create New Campaign</h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-8">
-        <div className="bg-white shadow sm:rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Campaign Name
-                </label>
-                <input
-                  type="text"
-                  {...register('name')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-                {errors.name && (
-                  <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-                )}
-              </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Campaign Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Campaign Name</Label>
+              <Input
+                id="name"
+                {...register('name')}
+              />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name.message}</p>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-gray-700">
-                  Email Subject
-                </label>
-                <input
-                  type="text"
-                  {...register('subject')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-                {errors.subject && (
-                  <p className="mt-1 text-sm text-red-600">{errors.subject.message}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="subject">Email Subject</Label>
+              <Input
+                id="subject"
+                {...register('subject')}
+              />
+              {errors.subject && (
+                <p className="text-sm text-destructive">{errors.subject.message}</p>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="body" className="block text-sm font-medium text-gray-700">
-                  Email Body
-                </label>
-                <div className="mt-1">
-                  <ReactQuill
-                    value={emailBody}
-                    onChange={setEmailBody}
-                    className="h-64"
-                  />
+            <div className="space-y-2">
+              <Label htmlFor="body">Email Body</Label>
+              <ReactQuill
+                value={emailBody}
+                onChange={setEmailBody}
+                className="h-64"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <Label>Recipients Input Method</Label>
+              <RadioGroup
+                value={inputMethod}
+                onValueChange={setInputMethod}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="manual" id="manual" />
+                  <Label htmlFor="manual">Manual Input</Label>
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Recipients Input Method
-                </label>
-                <div className="flex space-x-4 mb-4">
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      value="manual"
-                      checked={inputMethod === 'manual'}
-                      onChange={(e) => setInputMethod(e.target.value)}
-                      className="form-radio h-4 w-4 text-blue-600"
-                    />
-                    <span className="ml-2">Manual Input</span>
-                  </label>
-                  <label className="inline-flex items-center">
-                    <input
-                      type="radio"
-                      value="csv"
-                      checked={inputMethod === 'csv'}
-                      onChange={(e) => setInputMethod(e.target.value)}
-                      className="form-radio h-4 w-4 text-blue-600"
-                    />
-                    <span className="ml-2">CSV Upload</span>
-                  </label>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="csv" id="csv" />
+                  <Label htmlFor="csv">CSV Upload</Label>
                 </div>
+              </RadioGroup>
 
-                {inputMethod === 'manual' ? (
-                  <div className="space-y-4">
-                    {recipients.map((recipient, index) => (
-                      <div key={index} className="border rounded-lg p-4 bg-gray-50">
+              {inputMethod === 'manual' ? (
+                <div className="space-y-4">
+                  {recipients.map((recipient, index) => (
+                    <Card key={index}>
+                      <CardContent className="pt-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              Email
-                            </label>
-                            <div className="mt-1 relative rounded-md shadow-sm">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Mail className="h-4 w-4 text-gray-400" />
-                              </div>
-                              <input
+                          <div className="space-y-2">
+                            <Label>Email</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input
                                 type="email"
                                 value={recipient.email}
                                 onChange={(e) => updateRecipient(index, 'email', e.target.value)}
-                                className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="pl-10"
                                 placeholder="email@example.com"
                               />
                             </div>
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700">
-                              First Name
-                            </label>
-                            <div className="mt-1 relative rounded-md shadow-sm">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <User className="h-4 w-4 text-gray-400" />
-                              </div>
-                              <input
+                          <div className="space-y-2">
+                            <Label>First Name</Label>
+                            <div className="relative">
+                              <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input
                                 type="text"
                                 value={recipient.firstName}
                                 onChange={(e) => updateRecipient(index, 'firstName', e.target.value)}
-                                className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="pl-10"
                               />
                             </div>
                           </div>
-                          <div className="relative">
-                            <label className="block text-sm font-medium text-gray-700">
-                              Last Name
-                            </label>
-                            <div className="mt-1 relative rounded-md shadow-sm">
-                              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <User className="h-4 w-4 text-gray-400" />
-                              </div>
-                              <input
+                          <div className="space-y-2">
+                            <Label>Last Name</Label>
+                            <div className="relative">
+                              <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                              <Input
                                 type="text"
                                 value={recipient.lastName}
                                 onChange={(e) => updateRecipient(index, 'lastName', e.target.value)}
-                                className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                className="pl-10"
                               />
                             </div>
-                            {recipients.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removeRecipient(index)}
-                                className="absolute top-0 right-0 text-red-600 hover:text-red-800"
-                              >
-                                <X className="h-5 w-5" />
-                              </button>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={addRecipient}
-                      className="mt-2 inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Recipient
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <input
-                      type="file"
-                      accept=".csv"
-                      {...register('recipientsCsv')}
-                      className="block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-md file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100"
-                    />
-                    <p className="mt-2 text-sm text-gray-500">
-                      Upload a CSV file with columns: email, firstName, lastName
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="scheduledFor" className="block text-sm font-medium text-gray-700">
-                  Schedule Send (Optional)
-                </label>
-                <input
-                  type="datetime-local"
-                  {...register('scheduledFor')}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                />
-                {errors.scheduledFor && (
-                  <p className="mt-1 text-sm text-red-600">{errors.scheduledFor.message}</p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Attachments
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  <div className="space-y-1 text-center">
-                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label
-                        htmlFor="attachments"
-                        className="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 hover:text-blue-500"
-                      >
-                        <span>Upload files</span>
-                        <input
-                          id="attachments"
-                          type="file"
-                          multiple
-                          onChange={handleAttachmentChange}
-                          className="sr-only"
-                        />
-                      </label>
-                      <p className="pl-1">or drag and drop</p>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      PDF, DOC, DOCX, XLS, XLSX up to 10MB each
-                    </p>
-                  </div>
+                        {recipients.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="mt-4 text-destructive hover:text-destructive/90"
+                            onClick={() => removeRecipient(index)}
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Remove Recipient
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={addRecipient}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Recipient
+                  </Button>
                 </div>
-                {attachments.length > 0 && (
-                  <ul className="mt-4 space-y-2">
-                    {attachments.map((file, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md"
-                      >
-                        <span className="text-sm text-gray-700">{file.name}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeAttachment(index)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              ) : (
+                <div className="space-y-2">
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    {...register('recipientsCsv')}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Upload a CSV file with columns: email, firstName, lastName
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-        </div>
 
-        <div className="flex justify-end space-x-3">
-          <button
+            <div className="space-y-2">
+              <Label htmlFor="scheduledFor">Schedule Send (Optional)</Label>
+              <Input
+                type="datetime-local"
+                id="scheduledFor"
+                {...register('scheduledFor')}
+              />
+              {errors.scheduledFor && (
+                <p className="text-sm text-destructive">{errors.scheduledFor.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Attachments</Label>
+              <div className="mt-1 border-2 border-dashed rounded-lg p-6">
+                <div className="text-center">
+                  <Upload className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <div className="mt-4">
+                    <Label
+                      htmlFor="attachments"
+                      className="relative cursor-pointer rounded-md bg-white font-medium text-primary hover:text-primary/90"
+                    >
+                      <span>Upload files</span>
+                      <Input
+                        id="attachments"
+                        type="file"
+                        multiple
+                        onChange={handleAttachmentChange}
+                        className="sr-only"
+                      />
+                    </Label>
+                    <p className="pl-1 text-sm text-muted-foreground">
+                      or drag and drop
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    PDF, DOC, DOCX, XLS, XLSX up to 10MB each
+                  </p>
+                </div>
+              </div>
+              {attachments.length > 0 && (
+                <ul className="mt-4 space-y-2">
+                  {attachments.map((file, index) => (
+                    <li
+                      key={index}
+                      className="flex items-center justify-between py-2 px-3 bg-muted rounded-md"
+                    >
+                      <span className="text-sm">{file.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive/90"
+                        onClick={() => removeAttachment(index)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end space-x-4">
+          <Button
             type="button"
+            variant="outline"
             onClick={() => navigate('/campaigns')}
-            className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={loading}
-            className="inline-flex justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Creating...' : 'Create Campaign'}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

@@ -12,21 +12,7 @@ import {
 } from 'chart.js';
 import { Line, Pie } from 'react-chartjs-2';
 import { format, subDays } from 'date-fns';
-import {
-  Box,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-  CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper
-} from '@mui/material';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import useCampaignStore from '../store/campaignStore';
 
 ChartJS.register(
@@ -49,9 +35,9 @@ function Analytics() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-        <CircularProgress />
-      </Box>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+      </div>
     );
   }
 
@@ -82,20 +68,20 @@ function Analytics() {
       {
         label: 'Sent',
         data: last7Days.map(date => campaignsByDate[date]?.sent || 0),
-        borderColor: '#1976d2',
-        backgroundColor: 'rgba(25, 118, 210, 0.5)',
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.5)',
       },
       {
         label: 'Opened',
         data: last7Days.map(date => campaignsByDate[date]?.opened || 0),
-        borderColor: '#2e7d32',
-        backgroundColor: 'rgba(46, 125, 50, 0.5)',
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.5)',
       },
       {
         label: 'Clicked',
         data: last7Days.map(date => campaignsByDate[date]?.clicked || 0),
-        borderColor: '#ed6c02',
-        backgroundColor: 'rgba(237, 108, 2, 0.5)',
+        borderColor: 'rgb(249, 115, 22)',
+        backgroundColor: 'rgba(249, 115, 22, 0.5)',
       },
     ],
   };
@@ -123,18 +109,17 @@ function Analytics() {
           totalStats.failed,
         ],
         backgroundColor: [
-          'rgba(25, 118, 210, 0.6)',
-          'rgba(46, 125, 50, 0.6)',
-          'rgba(237, 108, 2, 0.6)',
-          'rgba(211, 47, 47, 0.6)',
+          'rgba(59, 130, 246, 0.6)',
+          'rgba(34, 197, 94, 0.6)',
+          'rgba(249, 115, 22, 0.6)',
+          'rgba(239, 68, 68, 0.6)',
         ],
         borderColor: [
-          '#1976d2',
-          '#2e7d32',
-          '#ed6c02',
-          '#d32f2f',
+          'rgb(59, 130, 246)',
+          'rgb(34, 197, 94)',
+          'rgb(249, 115, 22)',
+          'rgb(239, 68, 68)',
         ],
-        borderWidth: 1,
       },
     ],
   };
@@ -145,233 +130,161 @@ function Analytics() {
   const bounceRate = totalStats.sent ? ((totalStats.failed / totalStats.sent) * 100).toFixed(1) : 0;
 
   return (
-    <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Campaign Analytics
-      </Typography>
+    <div>
+      <h1 className="text-3xl font-bold tracking-tight mb-6">Campaign Analytics</h1>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'primary.main',
-                    color: 'primary.contrastText',
-                    mr: 2,
-                  }}
-                >
-                  {openRate}%
-                </Box>
-                <Box>
-                  <Typography color="text.secondary" variant="body2">
-                    Open Rate
-                  </Typography>
-                  <Typography variant="body1">
-                    {totalStats.opened} of {totalStats.sent}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 rounded bg-blue-100 text-blue-600 flex items-center justify-center">
+                {openRate}%
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Open Rate</p>
+                <p className="text-lg font-semibold">
+                  {totalStats.opened} of {totalStats.sent}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'success.main',
-                    color: 'success.contrastText',
-                    mr: 2,
-                  }}
-                >
-                  {clickRate}%
-                </Box>
-                <Box>
-                  <Typography color="text.secondary" variant="body2">
-                    Click Rate
-                  </Typography>
-                  <Typography variant="body1">
-                    {totalStats.clicked} of {totalStats.opened}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 rounded bg-green-100 text-green-600 flex items-center justify-center">
+                {clickRate}%
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Click Rate</p>
+                <p className="text-lg font-semibold">
+                  {totalStats.clicked} of {totalStats.opened}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'error.main',
-                    color: 'error.contrastText',
-                    mr: 2,
-                  }}
-                >
-                  {bounceRate}%
-                </Box>
-                <Box>
-                  <Typography color="text.secondary" variant="body2">
-                    Bounce Rate
-                  </Typography>
-                  <Typography variant="body1">
-                    {totalStats.failed} of {totalStats.sent}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 rounded bg-red-100 text-red-600 flex items-center justify-center">
+                {bounceRate}%
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Bounce Rate</p>
+                <p className="text-lg font-semibold">
+                  {totalStats.failed} of {totalStats.sent}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Box
-                  sx={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: 'secondary.main',
-                    color: 'secondary.contrastText',
-                    mr: 2,
-                  }}
-                >
-                  {campaigns.length}
-                </Box>
-                <Box>
-                  <Typography color="text.secondary" variant="body2">
-                    Total Campaigns
-                  </Typography>
-                  <Typography variant="body1">
-                    Active: {campaigns.filter(c => c.status === 'sending').length}
-                  </Typography>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center space-x-4">
+              <div className="h-12 w-12 rounded bg-gray-100 text-gray-600 flex items-center justify-center">
+                {campaigns.length}
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Total Campaigns</p>
+                <p className="text-lg font-semibold">
+                  Active: {campaigns.filter(c => c.status === 'sending').length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Email Performance (Last 7 Days)
-              </Typography>
-              <Box sx={{ height: 300 }}>
-                <Line
-                  data={lineChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top',
+      <div className="grid gap-6 md:grid-cols-2 mt-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Performance (Last 7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <Line
+                data={lineChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top',
+                    },
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      ticks: {
+                        stepSize: 1,
                       },
                     },
-                    scales: {
-                      y: {
-                        beginAtZero: true,
-                        ticks: {
-                          stepSize: 1,
-                        },
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Overall Campaign Performance
-              </Typography>
-              <Box sx={{ height: 300 }}>
-                <Pie
-                  data={pieChartData}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: 'top',
-                      },
+        <Card>
+          <CardHeader>
+            <CardTitle>Overall Campaign Performance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <Pie
+                data={pieChartData}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'top',
                     },
-                  }}
-                />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
+                  },
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Recent Campaign Performance
-              </Typography>
-              <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
-                <Table stickyHeader>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Campaign</TableCell>
-                      <TableCell align="right">Sent</TableCell>
-                      <TableCell align="right">Opened</TableCell>
-                      <TableCell align="right">Clicked</TableCell>
-                      <TableCell align="right">Failed</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {campaigns.slice(0, 5).map((campaign) => (
-                      <TableRow key={campaign._id}>
-                        <TableCell component="th" scope="row">
-                          {campaign.name}
-                        </TableCell>
-                        <TableCell align="right">{campaign.analytics.sent}</TableCell>
-                        <TableCell align="right">{campaign.analytics.opened}</TableCell>
-                        <TableCell align="right">{campaign.analytics.clicked}</TableCell>
-                        <TableCell align="right">{campaign.analytics.failed}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Recent Campaign Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs uppercase bg-muted">
+                <tr>
+                  <th className="px-6 py-3">Campaign</th>
+                  <th className="px-6 py-3 text-right">Sent</th>
+                  <th className="px-6 py-3 text-right">Opened</th>
+                  <th className="px-6 py-3 text-right">Clicked</th>
+                  <th className="px-6 py-3 text-right">Failed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {campaigns.slice(0, 5).map((campaign) => (
+                  <tr key={campaign._id} className="border-b">
+                    <td className="px-6 py-4 font-medium">{campaign.name}</td>
+                    <td className="px-6 py-4 text-right">{campaign.analytics.sent}</td>
+                    <td className="px-6 py-4 text-right">{campaign.analytics.opened}</td>
+                    <td className="px-6 py-4 text-right">{campaign.analytics.clicked}</td>
+                    <td className="px-6 py-4 text-right">{campaign.analytics.failed}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
