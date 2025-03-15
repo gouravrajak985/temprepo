@@ -6,34 +6,36 @@ const useEmailStore = create((set) => ({
   loading: false,
   error: null,
 
-  sendSingleEmail: async (emailData) => {
+  sendSingleEmail: async (formData) => {
     set({ loading: true });
     try {
-      const response = await axios.post('/campaigns/send-single', emailData);
-      // Add the new email to the list immediately after sending
-      const newEmail = {
-        _id: Date.now().toString(), // Temporary ID until we fetch the real one
-        recipient: {
-          email: emailData.get('email'),
-          firstName: emailData.get('firstName'),
-          lastName: emailData.get('lastName')
-        },
-        subject: emailData.get('subject'),
-        body: emailData.get('body'),
-        status: 'sent',
-        sentAt: new Date().toISOString()
+      const emailData = {
+        email: formData.get('email'),
+        firstName: formData.get('firstName'),
+        lastName: formData.get('lastName'),
+        subject: formData.get('subject'),
+        body: formData.get('body')
       };
+
+      const response = await axios.post('/campaigns/send-single', emailData);
+      
+      // Add the new email to the list
+      const newEmail = response.data.data.email;
       set(state => ({
         singleEmails: [newEmail, ...state.singleEmails],
         loading: false
       }));
-      return { success: true, message: response.data.message };
+      
+      return { success: true };
     } catch (error) {
       set({ 
         error: error.response?.data?.message || 'Failed to send email',
         loading: false 
       });
-      return { success: false, error: error.response?.data?.message };
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Failed to send email' 
+      };
     }
   },
 

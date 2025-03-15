@@ -21,4 +21,8 @@ router
 
 router.post('/:id/send', campaignController.sendCampaign);
 
+// Single email routes
+router.post('/send-single', campaignController.sendSingleEmail);
+router.get('/single-emails', campaignController.getSingleEmails);
+
 module.exports = router;

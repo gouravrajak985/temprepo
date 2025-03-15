@@ -121,8 +121,9 @@ function CreateCampaign() {
       formData.append('subject', data.subject);
       formData.append('body', emailBody);
       formData.append('recipients', JSON.stringify(finalRecipients));
-
+      console.log(formData)
       const result = await createCampaign(formData);
+      console.log(result);
       
       if (result.success) {
         toast.success('Campaign created successfully');

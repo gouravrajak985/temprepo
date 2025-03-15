@@ -1,5 +1,6 @@
 const Campaign = require('../models/Campaign');
 const EmailTracker = require('../models/EmailTracker');
+const SingleEmail = require('../models/SingleEmail');
 const nodemailer = require('nodemailer');
 
 // Create email transport
@@ -15,13 +16,23 @@ const transporter = nodemailer.createTransport({
 // Helper function to send email and update tracking
 async function sendEmailAndTrack(recipient, campaign, emailTracker) {
   try {
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: recipient.email,
-      subject: campaign.subject,
-      html: campaign.body
-    });
+    const {email}= recipient;
+    const {subject, body} = campaign;
 
+    const mailOptions = {
+      from: process.env.EMAIL_FROM, // Must be your verified email
+      to: email,
+      subject: subject,
+      html: body,
+    };
+    await transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error:", error);
+      } else {
+        console.log("Email sent:", info.response);
+      }
+    });
+ 
     // Update tracker and campaign analytics
     emailTracker.status = 'sent';
     emailTracker.deliveredAt = new Date();
@@ -92,6 +103,7 @@ exports.createCampaign = async (req, res) => {
     let recipients;
     try {
       recipients = JSON.parse(req.body.recipients);
+      console.log(recipients, "This is recipients");
     } catch (error) {
       return res.status(400).json({
         status: 'fail',
@@ -138,7 +150,7 @@ exports.createCampaign = async (req, res) => {
         failed: 0
       }
     });
-
+    console.log(campaign, "this is created campaign");
     // Create email trackers
     const emailTrackers = await Promise.all(
       campaign.recipients.map(recipient =>
@@ -354,6 +366,7 @@ exports.sendSingleEmail = async (req, res) => {
   try {
     const { email, firstName, lastName, subject, body } = req.body;
 
+    // Validate email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         status: 'fail',
@@ -361,31 +374,45 @@ exports.sendSingleEmail = async (req, res) => {
       });
     }
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject,
-      html: body
-    });
+    // Send email
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: email,
+        subject,
+        html: body
+      });
 
-    await EmailTracker.create({
-      recipient: { email, firstName, lastName },
-      status: 'sent',
-      deliveredAt: new Date()
-    });
+      // Create single email record
+      const singleEmail = await SingleEmail.create({
+        sender: req.user._id,
+        recipient: { email, firstName, lastName },
+        subject,
+        body,
+        status: 'sent',
+        sentAt: new Date()
+      });
 
-    res.status(200).json({
-      status: 'success',
-      message: 'Email sent successfully'
-    });
+      res.status(200).json({
+        status: 'success',
+        message: 'Email sent successfully',
+        data: { email: singleEmail }
+      });
+    } catch (error) {
+      // Log failed attempt
+      await SingleEmail.create({
+        sender: req.user._id,
+        recipient: { email, firstName, lastName },
+        subject,
+        body,
+        status: 'failed',
+        error: error.message,
+        sentAt: new Date()
+      });
+
+      throw error;
+    }
   } catch (error) {
-    await EmailTracker.create({
-      recipient: { email, firstName, lastName },
-      status: 'failed',
-      failedAt: new Date(),
-      failureReason: error.message
-    });
-
     res.status(400).json({
       status: 'fail',
       message: error.message
@@ -395,7 +422,7 @@ exports.sendSingleEmail = async (req, res) => {
 
 exports.getSingleEmails = async (req, res) => {
   try {
-    const emails = await EmailTracker.find({ sender: req.user._id })
+    const emails = await SingleEmail.find({ sender: req.user._id })
       .sort({ sentAt: -1 })
       .limit(100);
 
