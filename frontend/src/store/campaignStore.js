@@ -21,20 +21,17 @@ const useCampaignStore = create((set, get) => ({
   },
 
   createCampaign: async (campaignData) => {
-    set({ loading: true });
     try {
       const response = await axios.post('/campaigns', campaignData);
       set(state => ({
-        campaigns: [...state.campaigns, response.data.data.campaign],
-        loading: false
+        campaigns: [...state.campaigns, response.data.data.campaign]
       }));
       return { success: true, campaign: response.data.data.campaign };
     } catch (error) {
-      set({ 
-        error: error.response?.data?.message || 'Failed to create campaign',
-        loading: false 
-      });
-      return { success: false, error: error.response?.data?.message };
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Failed to create campaign'
+      };
     }
   },
 
@@ -54,23 +51,20 @@ const useCampaignStore = create((set, get) => ({
   },
 
   updateCampaign: async (id, updates) => {
-    set({ loading: true });
     try {
       const response = await axios.patch(`/campaigns/${id}`, updates);
       set(state => ({
         campaigns: state.campaigns.map(c => 
           c._id === id ? response.data.data.campaign : c
         ),
-        currentCampaign: response.data.data.campaign,
-        loading: false
+        currentCampaign: response.data.data.campaign
       }));
       return { success: true };
     } catch (error) {
-      set({ 
-        error: error.response?.data?.message || 'Failed to update campaign',
-        loading: false 
-      });
-      return { success: false, error: error.response?.data?.message };
+      return { 
+        success: false, 
+        error: error.response?.data?.message || 'Failed to update campaign'
+      };
     }
   },
 
@@ -95,7 +89,10 @@ const useCampaignStore = create((set, get) => ({
       set(state => ({
         campaigns: state.campaigns.map(c =>
           c._id === id ? { ...c, status: 'sending' } : c
-        )
+        ),
+        currentCampaign: state.currentCampaign && state.currentCampaign._id === id
+          ? { ...state.currentCampaign, status: 'sending' }
+          : state.currentCampaign
       }));
       return { success: true };
     } catch (error) {

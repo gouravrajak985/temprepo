@@ -5,7 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { Upload, Mail, User, ArrowLeft } from 'lucide-react';
+import { Upload, Mail, User, ArrowLeft, ReceiptCent } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,25 +88,29 @@ function CreateCampaign() {
       if (!validateRecipients()) return;
       
       setLoading(true);
+      console.log(recipients);
       let finalRecipients = recipients;
 
       if (inputMethod === 'csv' && data.recipientsCsv?.[0]) {
         finalRecipients = await processRecipientsCsv(data.recipientsCsv[0]);
       }
-
+    
       const formData = new FormData();
+      console.log(data.name);
       formData.append('name', data.name);
+      console.log(data.subject);
       formData.append('subject', data.subject);
       formData.append('body', emailBody);
       formData.append('recipients', JSON.stringify(finalRecipients));
       console.log(formData);
+
       const result = await createCampaign(formData);
       
       if (result.success) {
-        toast.success('Campaign created and started');
+        toast.success('Campaign created successfully');
         navigate('/campaigns');
       } else {
-        toast.error(result.error);
+        toast.error(result.error || 'Failed to create campaign');
       }
     } catch (error) {
       toast.error('Failed to create campaign');
@@ -292,7 +296,7 @@ function CreateCampaign() {
             type="submit"
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Start Campaign'}
+            {loading ? 'Creating...' : 'Create Campaign'}
           </Button>
         </div>
       </form>
