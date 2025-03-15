@@ -20,14 +20,15 @@ const useCampaignStore = create((set, get) => ({
     }
   },
 
-  createCampaign: async (campaignData) => {
+  createCampaign: async (formData) => {
     try {
-      const response = await axios.post('/campaigns', campaignData);
+      const response = await axios.post('/campaigns', formData);
       set(state => ({
         campaigns: [...state.campaigns, response.data.data.campaign]
       }));
       return { success: true, campaign: response.data.data.campaign };
     } catch (error) {
+      console.error('Campaign creation error:', error.response?.data || error);
       return { 
         success: false, 
         error: error.response?.data?.message || 'Failed to create campaign'
@@ -104,4 +105,4 @@ const useCampaignStore = create((set, get) => ({
   }
 }));
 
-export default useCampaignStore;
+export default useCampaignStore;  

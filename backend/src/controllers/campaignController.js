@@ -1,15 +1,6 @@
 const Campaign = require('../models/Campaign');
 const EmailTracker = require('../models/EmailTracker');
 const nodemailer = require('nodemailer');
-const Queue = require('bull');
-
-// Create email queue
-const emailQueue = new Queue('email-queue', {
-  redis: {
-    port: 6379,
-    host: '127.0.0.1'
-  }
-});
 
 // Create email transport
 const transporter = nodemailer.createTransport({
@@ -21,22 +12,12 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// Process emails in the queue
-emailQueue.process('send-email', async (job) => {
-  const { trackerId, campaignId } = job.data;
-  
+// Helper function to send email and update tracking
+async function sendEmailAndTrack(recipient, campaign, emailTracker) {
   try {
-    const emailTracker = await EmailTracker.findById(trackerId);
-    const campaign = await Campaign.findById(campaignId);
-
-    if (!emailTracker || !campaign) {
-      throw new Error('Email tracker or campaign not found');
-    }
-
-    // Send email
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
-      to: emailTracker.recipient.email,
+      to: recipient.email,
       subject: campaign.subject,
       html: campaign.body
     });
@@ -46,34 +27,64 @@ emailQueue.process('send-email', async (job) => {
     emailTracker.deliveredAt = new Date();
     await emailTracker.save();
 
-    await Campaign.findByIdAndUpdate(campaignId, {
+    await Campaign.findByIdAndUpdate(campaign._id, {
       $inc: {
         'analytics.sent': 1
       }
     });
 
-    return { success: true };
+    return true;
   } catch (error) {
     // Update tracker and campaign analytics for failure
-    if (trackerId) {
-      await EmailTracker.findByIdAndUpdate(trackerId, {
-        status: 'failed',
-        failedAt: new Date(),
-        failureReason: error.message
-      });
-    }
+    emailTracker.status = 'failed';
+    emailTracker.failedAt = new Date();
+    emailTracker.failureReason = error.message;
+    await emailTracker.save();
 
-    if (campaignId) {
-      await Campaign.findByIdAndUpdate(campaignId, {
-        $inc: {
-          'analytics.failed': 1
-        }
-      });
-    }
+    await Campaign.findByIdAndUpdate(campaign._id, {
+      $inc: {
+        'analytics.failed': 1
+      }
+    });
 
-    throw error;
+    return false;
   }
-});
+}
+
+// Helper function to send emails in batches
+async function sendEmailBatch(campaign, emailTrackers, batchSize = 50) {
+  const totalRecipients = campaign.recipients.length;
+  let successCount = 0;
+  let failureCount = 0;
+
+  for (let i = 0; i < totalRecipients; i += batchSize) {
+    const batch = campaign.recipients.slice(i, i + batchSize);
+    const batchTrackers = emailTrackers.slice(i, i + batchSize);
+
+    // Send emails in current batch concurrently
+    const results = await Promise.all(
+      batch.map((recipient, index) => 
+        sendEmailAndTrack(recipient, campaign, batchTrackers[index])
+      )
+    );
+
+    // Count successes and failures
+    successCount += results.filter(result => result).length;
+    failureCount += results.filter(result => !result).length;
+
+    // Small delay between batches to prevent overwhelming the email server
+    if (i + batchSize < totalRecipients) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  // Update campaign status based on results
+  const status = failureCount === totalRecipients ? 'failed' : 
+                 successCount === totalRecipients ? 'completed' : 
+                 'partially_sent';
+
+  await Campaign.findByIdAndUpdate(campaign._id, { status });
+}
 
 exports.createCampaign = async (req, res) => {
   try {
@@ -128,7 +139,7 @@ exports.createCampaign = async (req, res) => {
       }
     });
 
-    // Create email trackers and queue emails immediately
+    // Create email trackers
     const emailTrackers = await Promise.all(
       campaign.recipients.map(recipient =>
         EmailTracker.create({
@@ -142,15 +153,10 @@ exports.createCampaign = async (req, res) => {
       )
     );
 
-    // Add emails to queue
-    await Promise.all(
-      emailTrackers.map(tracker =>
-        emailQueue.add('send-email', {
-          trackerId: tracker._id,
-          campaignId: campaign._id
-        })
-      )
-    );
+    // Start sending emails in background
+    sendEmailBatch(campaign, emailTrackers).catch(error => {
+      console.error('Error sending campaign emails:', error);
+    });
 
     res.status(201).json({
       status: 'success',
@@ -179,7 +185,7 @@ exports.sendCampaign = async (req, res) => {
       });
     }
 
-    // Create email trackers for each recipient
+    // Create email trackers
     const emailTrackers = await Promise.all(
       campaign.recipients.map(recipient =>
         EmailTracker.create({
@@ -193,19 +199,14 @@ exports.sendCampaign = async (req, res) => {
       )
     );
 
-    // Add emails to queue
-    await Promise.all(
-      emailTrackers.map(tracker =>
-        emailQueue.add('send-email', {
-          trackerId: tracker._id,
-          campaignId: campaign._id
-        })
-      )
-    );
-
     // Update campaign status
     campaign.status = 'sending';
     await campaign.save();
+
+    // Start sending emails in background
+    sendEmailBatch(campaign, emailTrackers).catch(error => {
+      console.error('Error sending campaign emails:', error);
+    });
 
     res.status(200).json({
       status: 'success',
@@ -263,7 +264,6 @@ exports.getCampaign = async (req, res) => {
 
 exports.updateCampaign = async (req, res) => {
   try {
-    // Handle recipients update if present
     if (req.body.recipients) {
       try {
         const recipients = JSON.parse(req.body.recipients);
@@ -274,7 +274,6 @@ exports.updateCampaign = async (req, res) => {
           });
         }
 
-        // Validate recipient emails
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const invalidRecipients = recipients.filter(r => !r.email || !emailRegex.test(r.email));
         if (invalidRecipients.length > 0) {
@@ -355,7 +354,6 @@ exports.sendSingleEmail = async (req, res) => {
   try {
     const { email, firstName, lastName, subject, body } = req.body;
 
-    // Validate email
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({
         status: 'fail',
@@ -363,7 +361,6 @@ exports.sendSingleEmail = async (req, res) => {
       });
     }
 
-    // Send email
     await transporter.sendMail({
       from: process.env.EMAIL_FROM,
       to: email,
@@ -371,7 +368,6 @@ exports.sendSingleEmail = async (req, res) => {
       html: body
     });
 
-    // Log the sent email
     await EmailTracker.create({
       recipient: { email, firstName, lastName },
       status: 'sent',
@@ -383,7 +379,6 @@ exports.sendSingleEmail = async (req, res) => {
       message: 'Email sent successfully'
     });
   } catch (error) {
-    // Log failed attempt
     await EmailTracker.create({
       recipient: { email, firstName, lastName },
       status: 'failed',
@@ -414,4 +409,4 @@ exports.getSingleEmails = async (req, res) => {
       message: error.message
     });
   }
-}; 
+};

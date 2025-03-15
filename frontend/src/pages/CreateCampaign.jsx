@@ -5,7 +5,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { Upload, Mail, User, ArrowLeft, ReceiptCent } from 'lucide-react';
+import { Upload, Mail, User, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,7 +25,7 @@ function CreateCampaign() {
   const [emailBody, setEmailBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [recipients, setRecipients] = useState([{ email: '', firstName: '', lastName: '' }]);
-  const [inputMethod, setInputMethod] = useState('manual'); // 'manual' or 'csv'
+  const [inputMethod, setInputMethod] = useState('manual');
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: yupResolver(schema)
@@ -56,7 +56,7 @@ function CreateCampaign() {
           const values = row.split(',').map(v => v.trim());
           const recipient = {};
           headers.forEach((header, i) => {
-            recipient[header] = values[i];
+            recipient[header] = values[i] || '';
           });
           return recipient;
         });
@@ -85,24 +85,42 @@ function CreateCampaign() {
 
   const onSubmit = async (data) => {
     try {
-      if (!validateRecipients()) return;
+      if (!emailBody.trim()) {
+        toast.error('Email body is required');
+        return;
+      }
+
+      if (inputMethod === 'manual' && !validateRecipients()) {
+        return;
+      }
       
       setLoading(true);
-      console.log(recipients);
       let finalRecipients = recipients;
 
       if (inputMethod === 'csv' && data.recipientsCsv?.[0]) {
         finalRecipients = await processRecipientsCsv(data.recipientsCsv[0]);
       }
-    
+
+      // Filter out empty recipients and ensure proper formatting
+      finalRecipients = finalRecipients
+        .filter(r => r.email.trim())
+        .map(r => ({
+          email: r.email.trim(),
+          firstName: r.firstName?.trim() || '',
+          lastName: r.lastName?.trim() || ''
+        }));
+
+      if (finalRecipients.length === 0) {
+        toast.error('At least one valid recipient is required');
+        setLoading(false);
+        return;
+      }
+
       const formData = new FormData();
-      console.log(data.name);
       formData.append('name', data.name);
-      console.log(data.subject);
       formData.append('subject', data.subject);
       formData.append('body', emailBody);
       formData.append('recipients', JSON.stringify(finalRecipients));
-      console.log(formData);
 
       const result = await createCampaign(formData);
       
@@ -114,6 +132,7 @@ function CreateCampaign() {
       }
     } catch (error) {
       toast.error('Failed to create campaign');
+      console.error('Campaign creation error:', error);
     } finally {
       setLoading(false);
     }
